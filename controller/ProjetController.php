@@ -1,76 +1,65 @@
 <?php
-require_once __DIR__ . '/../model/Utilisateur.php';
-require_once __DIR__ . '/../model/Projet.php'; // Pour la liste des projets dans l'affectation
+require_once __DIR__ . '/../model/Projet.php';
 
-class UtilisateurController
+class ProjetController
 {
-    private $utilisateurModel;
     private $projetModel;
 
     public function __construct($db)
     {
-        $this->utilisateurModel = new Utilisateur($db);
-        $this->projetModel = new Projet($db); // Besoin du model projet pour l'affectation
+        $this->projetModel = new Projet($db);
     }
 
     /**
-     * Affiche la liste des utilisateurs (peut-être pas nécessaire dans les vues demandées, mais utile pour la logique).
+     * Affiche la liste des projets.
      */
-    public function listUtilisateurs()
+    public function listProjets()
     {
-        $utilisateurs = $this->utilisateurModel->getAllUtilisateurs();
-        if ($utilisateurs !== false) {
-            // Si vous aviez une vue pour la liste des utilisateurs, vous l'incluriez ici
-            // include __DIR__ . '/../view/utilisateursList.php';
-            echo "Liste des utilisateurs (fonctionnalité non demandée dans les vues):";
-            echo "<pre>";
-            print_r($utilisateurs);
-            echo "</pre>";
-        } else {
-            echo "Impossible d'afficher la liste des utilisateurs.";
-        }
-    }
-
-    /**
-     * Méthode pour afficher le formulaire d'affectation d'un utilisateur à un projet.
-     */
-    public function affectationForm()
-    {
-        $utilisateurs = $this->utilisateurModel->getAllUtilisateurs();
         $projets = $this->projetModel->getAllProjets();
-        if ($utilisateurs !== false && $projets !== false) {
-            include __DIR__ . '/../view/affectation.php'; // Inclure la vue en passant les données
+        if ($projets !== false) {
+            include __DIR__ . '/../view/projetsList.php'; // Inclure la vue avec les données
         } else {
-            echo "Impossible d'afficher le formulaire d'affectation.";
+            echo "Impossible d'afficher la liste des projets."; // Gérer l'erreur d'affichage
         }
     }
 
     /**
-     * Traite le formulaire d'affectation d'un utilisateur à un projet et effectue l'affectation.
+     * Affiche le formulaire d'ajout de projet.
      */
-    public function affecterUtilisateurProjet()
+    public function addProjetForm()
+    {
+        include __DIR__ . '/../view/projetAdd.php';
+    }
+
+    /**
+     * Traite le formulaire d'ajout de projet et ajoute le projet.
+     */
+    public function addProjet()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id_utilisateur = $_POST['id_utilisateur'] ?? '';
-            $id_projet = $_POST['id_projet'] ?? '';
+            $titre = $_POST['titre'] ?? '';
+            $description = $_POST['description'] ?? null;
+            $date_debut = $_POST['date_debut'] ?? null;
+            $date_fin = $_POST['date_fin'] ?? null;
+            $statut = $_POST['statut'] ?? null;
 
-            if (empty($id_utilisateur) || empty($id_projet)) {
-                echo "Veuillez sélectionner un utilisateur et un projet.";
-                $this->affectationForm(); // Réafficher le formulaire avec message d'erreur
+            if (empty($titre)) {
+                echo "Le titre du projet est obligatoire."; // Validation basique
+                include __DIR__ . '/../view/projetAdd.php'; // Réafficher le formulaire avec message d'erreur
                 return;
             }
 
-            if ($this->utilisateurModel->affecterUtilisateurProjet($id_utilisateur, $id_projet)) {
-                // Redirection vers la liste des projets après l'affectation réussie
+            if ($this->projetModel->addProjet($titre, $description, $date_debut, $date_fin, $statut)) {
+                // Redirection vers la liste des projets après l'ajout réussi
                 header('Location: index.php?action=listProjets');
                 exit();
             } else {
-                echo "Erreur lors de l'affectation de l'utilisateur au projet.";
-                $this->affectationForm(); // Réafficher le formulaire avec message d'erreur
+                echo "Erreur lors de l'ajout du projet."; // Gérer l'erreur d'ajout
+                include __DIR__ . '/../view/projetAdd.php'; // Réafficher le formulaire avec message d'erreur
             }
         } else {
-            // Si on accède à affecterUtilisateurProjet sans POST, rediriger vers le formulaire
-            header('Location: index.php?action=affectationForm');
+            // Si on accède à addProjet sans POST, rediriger vers le formulaire
+            header('Location: index.php?action=addProjetForm');
             exit();
         }
     }
