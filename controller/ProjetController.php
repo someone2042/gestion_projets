@@ -1,58 +1,35 @@
 <?php
-require_once __DIR__ . '/../model/Projet.php';
-
-class ProjetController
+class Utilisateur
 {
-    private $projetModel;
+    private $db;
 
     public function __construct($db)
     {
-        $this->projetModel = new Projet($db);
+        $this->db = $db;
     }
 
-    public function listProjets()
+
+    public function getAllUtilisateurs()
     {
-        $projets = $this->projetModel->getAllProjets();
-        if ($projets !== false) {
-            include __DIR__ . '/../view/projetsList.php';
-        } else {
-            echo "Impossible d'afficher la liste des projets.";
+        try {
+            $stmt = $this->db->query("SELECT * FROM utilisateurs");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo "Erreur lors de la récupération des utilisateurs : " . $e->getMessage();
+            return false;
         }
     }
 
 
-    public function addProjetForm()
+    public function affecterUtilisateurProjet($id_utilisateur, $id_projet)
     {
-        include __DIR__ . '/../view/projetAdd.php';
-    }
-
-    public function addProjet()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $titre = $_POST['titre'] ?? '';
-            $description = $_POST['description'] ?? null;
-            $date_debut = $_POST['date_debut'] ?? null;
-            $date_fin = $_POST['date_fin'] ?? null;
-            $statut = $_POST['statut'] ?? null;
-
-            if (empty($titre)) {
-                echo "Le titre du projet est obligatoire.";
-                include __DIR__ . '/../view/projetAdd.php';
-                return;
-            }
-
-            if ($this->projetModel->addProjet($titre, $description, $date_debut, $date_fin, $statut)) {
-
-                header('Location: index.php?action=listProjets');
-                exit();
-            } else {
-                echo "Erreur lors de l'ajout du projet.";
-                include __DIR__ . '/../view/projetAdd.php';
-            }
-        } else {
-
-            header('Location: index.php?action=addProjetForm');
-            exit();
+        try {
+            $sql = "INSERT INTO projets_utilisateurs (id_utilisateur, id_projet) VALUES (?, ?)";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([$id_utilisateur, $id_projet]);
+        } catch (PDOException $e) {
+            echo "Erreur lors de l'affectation de l'utilisateur au projet : " . $e->getMessage();
+            return false;
         }
     }
 }
